@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .invoice {
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin: auto;
+            border: 1px solid #000;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            margin: 5px 0;
+        }
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            background-color: #e0e0e0;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #000;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        .subtotal, .total, .discount {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+        input {
+            padding: 5px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100px;
+        }
+        .btn {
+            margin-top: 10px;
+            padding: 10px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .header {
+            display: flex;
+            align-items: center;  /* Align logo and text in the same line */
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+
+        .logo {
+            width: 150px;  /* Adjust logo size */
+            height: auto;
+            margin-right: 15px; /* Space between logo and text */
+        }
+
+        .header-text {
+            flex-grow: 1;  /* Allow text to take remaining space */
+        }
+
+    </style>
+</head>
+<body onload="setTodayDate()">
+    <div class="invoice" id="invoice">
+        <div class="header">
+            <img src="b2logo.png" alt="Company Logo" class="logo">
+            <div class="header-text">
+                <h1>B2 WHOLESALE MEGAMART</h1>
+                <p>SAHOKHAR, SOHSARAI, BIHAR SHARIF, Nalanda, Bihar, 803118</p>
+                <p>Mobile: 62040595801 | GSTIN: 10AJPPG8120K1ZC | PAN: AJPPG8120K</p>
+            </div>
+        </div>
+        
+        
+        <div class="invoice-header">
+            <span>Invoice No.: <input type="text" value="0"></span>
+            <span>Invoice Date: <input type="date" id="invoice-date"></span>
+        </div>
+        
+        <div class="billing-info">
+            <h3>BILL TO</h3>
+            Name: <input type="text" value="Vivek Kumar"><br>
+            Mobile: <input type="text" value="8218466362">
+        </div>
+
+        <table id="items-table">
+            <thead>
+                <tr>
+                    <th>ITEMS</th>
+                    <th>QTY.</th>
+                    <th>MRP</th>
+                    <th>RATE</th>
+                    <th>AMOUNT</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        
+        <button class="btn" onclick="addItem()">Add Item</button>
+
+        <div class="subtotal">
+            <span>SUBTOTAL:</span>
+            <span>₹<input type="number" id="subtotal" value="0" readonly></span>
+        </div>
+
+        <div class="discount">
+            <span>DISCOUNT:</span>
+            <span>₹<input type="number" id="discount" value="0" oninput="calculateTotal()"></span>
+        </div>
+
+        <div class="total">
+            <span>TOTAL AMOUNT TO PAY:</span>
+            <span>₹<input type="number" id="total-amount" value="0" readonly></span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+            <!-- Bank Details -->
+            <div class="bank-details" style="width: 50%;">
+                <h3>Bank Details</h3>
+                <p><strong>Bank Name:</strong> STATE BANK OF INDIA</p>
+                <p><strong>Account Holder:</strong> B2 WHOLESALE MEGAMART</p>
+                <p><strong>Account Number:</strong> 1234567890</p>
+                <p><strong>IFSC Code:</strong> SBIN0001234</p>
+            </div>
+        
+            <!-- Authorized Signature -->
+            <div class="signature" style="width: 40%; text-align: right;">
+                <p><strong>Authorized Signature</strong></p>
+                <img src="b2logo.png" alt="Signature" style="width: 100px; height: auto;">
+                <p>(B2 WHOLESALE MEGAMART)</p>
+            </div>
+        </div>       
+
+        <button class="btn" onclick="downloadInvoice()">Download Invoice</button>
+    </div>
+
+    <script>
+        function setTodayDate() {
+            document.getElementById("invoice-date").valueAsDate = new Date();
+        }
+
+        function addItem() {
+            let table = document.getElementById("items-table").getElementsByTagName('tbody')[0];
+            let row = table.insertRow();
+            row.innerHTML = `
+                <td><input type='text' placeholder='Item Name'></td>
+                <td><input type='number' class='qty' value='1' min='1' oninput='calculateTotal()'></td>
+                <td><input type='number' class='mrp' value='0'></td>
+                <td><input type='number' class='rate' value='0' oninput='calculateTotal()'></td>
+                <td><input type='number' class='amount' value='0' readonly></td>
+                <td><button onclick='removeItem(this)'>Remove</button></td>
+            `;
+            calculateTotal();
+        }
+
+        function removeItem(button) {
+            let row = button.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            let subtotal = 0;
+            document.querySelectorAll(".qty").forEach((qty, i) => {
+                let rate = document.querySelectorAll(".rate")[i].value || 0;
+                let amount = qty.value * rate;
+                document.querySelectorAll(".amount")[i].value = amount.toFixed(2);
+                subtotal += amount;
+            });
+            document.getElementById("subtotal").value = subtotal.toFixed(2);
+            document.getElementById("total-amount").value = (subtotal - (document.getElementById("discount").value || 0)).toFixed(2);
+        }
+
+        async function downloadInvoice() {
+    const { jsPDF } = window.jspdf;
+    let pdf = new jsPDF("p", "mm", "a4");
+
+    // Hide buttons before capturing the image
+    let buttons = document.querySelectorAll(".btn, td button");
+    buttons.forEach(button => button.style.display = "none");
+
+    // Temporarily replace inputs with text for clean PDF
+    let inputs = document.querySelectorAll("input");
+    let originalValues = [];
+
+    inputs.forEach((input, index) => {
+        originalValues[index] = input.value; // Store original value
+        let span = document.createElement("span");
+        span.innerText = input.value;
+        span.style.fontWeight = "bold";
+        input.parentNode.replaceChild(span, input);
+    });
+
+    // Convert invoice div to image
+    let invoiceElement = document.querySelector(".invoice");
+    html2canvas(invoiceElement, { scale: 2 }).then(canvas => {
+        let imgData = canvas.toDataURL("image/png");
+        let imgWidth = 190; // Adjust width for A4
+        let imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
+        pdf.save("invoice.pdf");
+
+        // Restore original inputs
+        document.querySelectorAll(".invoice span").forEach((span, index) => {
+            let input = document.createElement("input");
+            input.value = originalValues[index];
+            span.parentNode.replaceChild(input, span);
+        });
+
+        // Restore buttons after generating PDF
+        buttons.forEach(button => button.style.display = "inline-block");
+    });
+}
+
+    </script>
+</body>
+</html>
