@@ -42,6 +42,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
+            
             margin-top: 20px;
         }
         table, th, td {
@@ -50,6 +51,7 @@
         th, td {
             padding: 10px;
             text-align: left;
+            background-color: #8eb5e7;
         }
         .subtotal, .total, .discount {
             margin-top: 20px;
@@ -93,6 +95,12 @@
         .header-text {
             flex-grow: 1;  /* Allow text to take remaining space */
         }
+        .invoice > div {
+            border-bottom: 2px solid #000;  /* Add a solid black line under each div */
+            padding-bottom: 10px;           /* Add spacing between content and the line */
+            margin-bottom: 15px;            /* Add margin below each section */
+        }
+
 
     </style>
 </head>
@@ -213,9 +221,12 @@
     const { jsPDF } = window.jspdf;
     let pdf = new jsPDF("p", "mm", "a4");
 
-    // Hide buttons before capturing the image
+    // Hide buttons and "Action" column before capturing the image
     let buttons = document.querySelectorAll(".btn, td button");
+    let actionColumn = document.querySelectorAll("th:nth-child(6), td:nth-child(6)");
+
     buttons.forEach(button => button.style.display = "none");
+    actionColumn.forEach(cell => cell.style.display = "none");
 
     // Temporarily replace inputs with text for clean PDF
     let inputs = document.querySelectorAll("input");
@@ -246,8 +257,9 @@
             span.parentNode.replaceChild(input, span);
         });
 
-        // Restore buttons after generating PDF
+        // Restore buttons and "Action" column after generating PDF
         buttons.forEach(button => button.style.display = "inline-block");
+        actionColumn.forEach(cell => cell.style.display = "table-cell");
     });
 }
 
