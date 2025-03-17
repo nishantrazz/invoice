@@ -217,50 +217,39 @@
             document.getElementById("total-amount").value = (subtotal - (document.getElementById("discount").value || 0)).toFixed(2);
         }
 
-        async function downloadInvoice() {
+ async function downloadInvoice() {
     const { jsPDF } = window.jspdf;
     let pdf = new jsPDF("p", "mm", "a4");
 
-    // Hide buttons and "Action" column before capturing the image
+    // Hide buttons and "Action" column before capturing
     let buttons = document.querySelectorAll(".btn, td button");
     let actionColumn = document.querySelectorAll("th:nth-child(6), td:nth-child(6)");
 
     buttons.forEach(button => button.style.display = "none");
     actionColumn.forEach(cell => cell.style.display = "none");
 
-    // Temporarily replace inputs with text for clean PDF
-    let inputs = document.querySelectorAll("input");
-    let originalValues = [];
-
-    inputs.forEach((input, index) => {
-        originalValues[index] = input.value; // Store original value
-        let span = document.createElement("span");
-        span.innerText = input.value;
-        span.style.fontWeight = "bold";
-        input.parentNode.replaceChild(span, input);
-    });
-
     // Convert invoice div to image
     let invoiceElement = document.querySelector(".invoice");
-    html2canvas(invoiceElement, { scale: 2 }).then(canvas => {
-        let imgData = canvas.toDataURL("image/png");
-        let imgWidth = 190; // Adjust width for A4
-        let imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
-        pdf.save("invoice.pdf");
 
-        // Restore original inputs
-        document.querySelectorAll(".invoice span").forEach((span, index) => {
-            let input = document.createElement("input");
-            input.value = originalValues[index];
-            span.parentNode.replaceChild(input, span);
+    // Ensure smooth rendering by delaying canvas rendering for mobile
+    setTimeout(() => {
+        html2canvas(invoiceElement, {
+            scale: window.devicePixelRatio,  // Ensure high quality
+            useCORS: true,                   // Fix potential image loading issues
+            allowTaint: true
+        }).then(canvas => {
+            let imgData = canvas.toDataURL("image/png");
+            let imgWidth = 190;
+            let imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+            pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
+            pdf.save("invoice.pdf");
+
+            // Restore buttons and "Action" column
+            buttons.forEach(button => button.style.display = "inline-block");
+            actionColumn.forEach(cell => cell.style.display = "table-cell");
         });
-
-        // Restore buttons and "Action" column after generating PDF
-        buttons.forEach(button => button.style.display = "inline-block");
-        actionColumn.forEach(cell => cell.style.display = "table-cell");
-    });
+    }, 500); // Small delay to ensure proper rendering
 }
 
     </script>
